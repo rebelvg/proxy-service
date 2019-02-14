@@ -6,29 +6,6 @@ import * as net from 'net';
 
 import { config } from './config';
 
-const httpServer = http.createServer(onRequest);
-const httpsServer = https.createServer(
-  {
-    key: fs.readFileSync(config.key),
-    cert: fs.readFileSync(config.cert)
-  },
-  onRequest
-);
-
-httpServer.on('connect', onConnect);
-httpsServer.on('connect', onConnect);
-
-httpServer.on('error', err => {
-  console.error(err);
-
-  throw err;
-});
-httpsServer.on('error', err => {
-  console.error(err);
-
-  throw err;
-});
-
 function isAuthorized(proxyAuth: string): boolean {
   if (!proxyAuth) {
     return false;
@@ -145,12 +122,38 @@ process.on('unhandledRejection', (reason, p) => {
 });
 
 if (config.httpPort) {
+  const httpServer = http.createServer(onRequest);
+
+  httpServer.on('connect', onConnect);
+
+  httpServer.on('error', err => {
+    console.error(err);
+
+    throw err;
+  });
+
   httpServer.listen(config.httpPort);
 
   console.log('http proxy is running...');
 }
 
 if (config.httpsPort) {
+  const httpsServer = https.createServer(
+    {
+      key: fs.readFileSync(config.key),
+      cert: fs.readFileSync(config.cert)
+    },
+    onRequest
+  );
+
+  httpsServer.on('connect', onConnect);
+
+  httpsServer.on('error', err => {
+    console.error(err);
+
+    throw err;
+  });
+
   httpsServer.listen(config.httpsPort);
 
   console.log('https proxy is running...');
