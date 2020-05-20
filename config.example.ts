@@ -3,7 +3,10 @@ export const config = {
   cert: 'certificate.crt',
   httpPort: 8080,
   httpsPort: 8443,
-  users: {
-    user: 'secret_key',
-  },
+  users: [
+    {
+      login: 'rebel',
+      password: 'secret_key',
+    },
+  ],
 };

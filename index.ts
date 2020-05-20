@@ -3,6 +3,7 @@ import * as https from 'https';
 import * as fs from 'fs';
 import { URL } from 'url';
 import * as net from 'net';
+import * as _ from 'lodash';
 
 import { config } from './config';
 
@@ -17,11 +18,9 @@ function isAuthorized(proxyAuth: string): boolean {
 
   const [login, password] = authString.split(':');
 
-  if (!config.users[login]) {
-    return false;
-  }
+  const user = _.find(config.users, { login, password });
 
-  if (config.users[login] !== password) {
+  if (!user) {
     return false;
   }
 
@@ -29,7 +28,7 @@ function isAuthorized(proxyAuth: string): boolean {
 }
 
 function onConnect(req: http.IncomingMessage, socket: net.Socket, head: Buffer) {
-  socket.on('error', err => {
+  socket.on('error', (err) => {
     console.error('socket', err.message, req.url);
 
     socket.end();
@@ -41,21 +40,21 @@ function onConnect(req: http.IncomingMessage, socket: net.Socket, head: Buffer) 
 
   if (!isAuthorized(req.headers['proxy-authorization'])) {
     socket.write(
-      ['HTTP/1.1 407 Proxy Authentication Required', 'Proxy-Authenticate: Basic'].join('\n') + '\n\n',
+      `${['HTTP/1.1 407 Proxy Authentication Required', 'Proxy-Authenticate: Basic'].join('\n')}\n\n`,
       () => {
         socket.end();
       }
     );
   } else {
     const netConnect = net.connect(port, urlHost, () => {
-      socket.write(['HTTP/1.1 200 OK'].join('\n') + '\n\n', () => {
+      socket.write(`${['HTTP/1.1 200 OK'].join('\n')}\n\n`, () => {
         netConnect.pipe(socket);
 
         socket.pipe(netConnect);
       });
     });
 
-    netConnect.on('error', err => {
+    netConnect.on('error', (err) => {
       console.error('netConnect', err.message, req.url, urlHost);
 
       socket.end();
@@ -81,7 +80,7 @@ function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerRespon
     port: url.port || 80,
     path: ''.concat(url.pathname, url.search, url.hash),
     method: clientReq.method,
-    headers: clientReq.headers
+    headers: clientReq.headers,
   };
 
   if (!isAuthorized(clientReq.headers['proxy-authorization'])) {
@@ -89,18 +88,15 @@ function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerRespon
 
     clientRes.end();
   } else {
-    const proxy = http.request(options, res => {
+    const proxy = http.request(options, (res) => {
       clientRes.writeHead(res.statusCode, res.headers);
 
-      res.pipe(
-        clientRes,
-        {
-          end: true
-        }
-      );
+      res.pipe(clientRes, {
+        end: true,
+      });
     });
 
-    proxy.on('error', err => {
+    proxy.on('error', (err) => {
       console.error('proxy', err.message, clientReq.url, url.hostname);
 
       clientRes.write(err.message, 'utf8');
@@ -108,12 +104,9 @@ function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerRespon
       clientRes.end();
     });
 
-    clientReq.pipe(
-      proxy,
-      {
-        end: true
-      }
-    );
+    clientReq.pipe(proxy, {
+      end: true,
+    });
   }
 }
 
@@ -126,7 +119,7 @@ if (config.httpPort) {
 
   httpServer.on('connect', onConnect);
 
-  httpServer.on('error', err => {
+  httpServer.on('error', (err) => {
     console.error(err);
 
     throw err;
@@ -141,14 +134,14 @@ if (config.httpsPort) {
   const httpsServer = https.createServer(
     {
       key: fs.readFileSync(config.key),
-      cert: fs.readFileSync(config.cert)
+      cert: fs.readFileSync(config.cert),
     },
     onRequest
   );
 
   httpsServer.on('connect', onConnect);
 
-  httpsServer.on('error', err => {
+  httpsServer.on('error', (err) => {
     console.error(err);
 
     throw err;
