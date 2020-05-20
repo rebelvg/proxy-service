@@ -8,7 +8,7 @@
     "pm2": "yarn install && pm2 restart proxy-node"
   },
   "dependencies": {
-    "lodash": "^4.17.5"
+    "lodash": "^4.17.13"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.120",
