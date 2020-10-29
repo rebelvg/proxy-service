@@ -26,7 +26,7 @@ socksServer.listen(config.socksPort, 'localhost', function () {
 (socksServer as any).useAuth(socks5.auth.None());
 
 function isAuthorized(proxyAuth: string, ipAddress: string): boolean {
-  if (_.find(STORE.loggedInIps, (ip) => ip.includes(info.srcAddr))) {
+  if (_.find(STORE.loggedInIps, (ip) => ip.includes(ipAddress))) {
     return true;
   }
 
