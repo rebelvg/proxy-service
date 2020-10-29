@@ -9,7 +9,7 @@ import * as socks5 from '@heroku/socksv5';
 import { config } from './config';
 import { STORE } from './store';
 
-const socksServer: net.Server = socks5.createServer(function (info, accept, deny) {
+const socksServer: net.Server = socks5.createServer((info, accept, deny) => {
   if (!_.find(STORE.loggedInIps, (ip) => ip.includes(info.srcAddr))) {
     deny();
 
@@ -19,13 +19,13 @@ const socksServer: net.Server = socks5.createServer(function (info, accept, deny
   accept();
 });
 
-socksServer.listen(config.socksPort, 'localhost', function () {
+socksServer.listen(config.socksPort, 'localhost', () => {
   console.log('socks_server_running');
 });
 
 (socksServer as any).useAuth(socks5.auth.None());
 
-function isAuthorized(proxyAuth: string, ipAddress: string): boolean {
+function verifyUser(proxyAuth: string, ipAddress: string): boolean {
   if (_.find(STORE.loggedInIps, (ip) => ip.includes(ipAddress))) {
     return true;
   }
@@ -47,7 +47,7 @@ function isAuthorized(proxyAuth: string, ipAddress: string): boolean {
   }
 
   if (!STORE.loggedInIps.includes(ipAddress)) {
-    console.log('added_ip_socks_list');
+    console.log('added_ip_socks_list', ipAddress);
 
     STORE.loggedInIps.push(ipAddress);
   }
@@ -66,28 +66,32 @@ function onConnect(req: http.IncomingMessage, socket: net.Socket, head: Buffer) 
 
   const port = parseInt(urlPort) || 443;
 
-  if (!isAuthorized(req.headers['proxy-authorization'], socket.remoteAddress)) {
+  const isAuthorized = verifyUser(req.headers['proxy-authorization'], socket.remoteAddress);
+
+  if (!isAuthorized) {
     socket.write(
       `${['HTTP/1.1 407 Proxy Authentication Required', 'Proxy-Authenticate: Basic'].join('\n')}\n\n`,
       () => {
         socket.end();
       }
     );
-  } else {
-    const netConnect = net.connect(port, urlHost, () => {
-      socket.write(`${['HTTP/1.1 200 OK'].join('\n')}\n\n`, () => {
-        netConnect.pipe(socket);
 
-        socket.pipe(netConnect);
-      });
-    });
-
-    netConnect.on('error', (err) => {
-      console.error('netConnect', err.message, req.url, urlHost);
-
-      socket.end();
-    });
+    return;
   }
+
+  const netConnect = net.connect(port, urlHost, () => {
+    socket.write(`${['HTTP/1.1 200 OK'].join('\n')}\n\n`, () => {
+      netConnect.pipe(socket);
+
+      socket.pipe(netConnect);
+    });
+  });
+
+  netConnect.on('error', (err) => {
+    console.error('netConnect', err.message, req.url, urlHost);
+
+    socket.end();
+  });
 }
 
 function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerResponse) {
@@ -111,31 +115,35 @@ function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerRespon
     headers: clientReq.headers,
   };
 
-  if (!isAuthorized(clientReq.headers['proxy-authorization'], clientReq.socket.remoteAddress)) {
+  const isAuthorized = verifyUser(clientReq.headers['proxy-authorization'], clientReq.socket.remoteAddress);
+
+  if (!isAuthorized) {
     clientRes.writeHead(407, { 'Proxy-Authenticate': 'Basic' });
 
     clientRes.end();
-  } else {
-    const proxy = http.request(options, (res) => {
-      clientRes.writeHead(res.statusCode, res.headers);
 
-      res.pipe(clientRes, {
-        end: true,
-      });
-    });
+    return;
+  }
 
-    proxy.on('error', (err) => {
-      console.error('proxy', err.message, clientReq.url, url.hostname);
+  const proxy = http.request(options, (res) => {
+    clientRes.writeHead(res.statusCode, res.headers);
 
-      clientRes.write(err.message, 'utf8');
-
-      clientRes.end();
-    });
-
-    clientReq.pipe(proxy, {
+    res.pipe(clientRes, {
       end: true,
     });
-  }
+  });
+
+  proxy.on('error', (err) => {
+    console.error('proxy', err.message, clientReq.url, url.hostname);
+
+    clientRes.write(err.message, 'utf8');
+
+    clientRes.end();
+  });
+
+  clientReq.pipe(proxy, {
+    end: true,
+  });
 }
 
 process.on('unhandledRejection', (reason, p) => {
@@ -155,7 +163,7 @@ if (config.httpPort) {
 
   httpServer.listen(config.httpPort);
 
-  console.log('http proxy is running...');
+  console.log('http_proxy_running');
 }
 
 if (config.httpsPort) {
@@ -177,5 +185,5 @@ if (config.httpsPort) {
 
   httpsServer.listen(config.httpsPort);
 
-  console.log('https proxy is running...');
+  console.log('https_proxy_running');
 }
