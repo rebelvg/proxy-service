@@ -19,13 +19,17 @@ const socksServer: net.Server = socks5.createServer(function (info, accept, deny
   accept();
 });
 
-socksServer.listen(1080, 'localhost', function () {
-  console.log('SOCKS server listening on port 1080');
+socksServer.listen(config.socksPort, 'localhost', function () {
+  console.log('socks_server_running');
 });
 
 (socksServer as any).useAuth(socks5.auth.None());
 
 function isAuthorized(proxyAuth: string, ipAddress: string): boolean {
+  if (_.find(STORE.loggedInIps, (ip) => ip.includes(info.srcAddr))) {
+    return true;
+  }
+
   if (!proxyAuth) {
     return false;
   }
