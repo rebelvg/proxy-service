@@ -5,8 +5,8 @@ export const config = {
   httpsPort: 8443,
   users: [
     {
-      login: 'rebel',
-      password: 'secret_key',
+      login: 'login',
+      password: 'password',
     },
   ],
 };

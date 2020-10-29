@@ -8,6 +8,7 @@
     "pm2": "yarn install && pm2 restart proxy-node"
   },
   "dependencies": {
+    "@heroku/socksv5": "^0.0.9",
     "lodash": "^4.17.5"
   },
   "devDependencies": {

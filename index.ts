@@ -4,10 +4,28 @@ import * as fs from 'fs';
 import { URL } from 'url';
 import * as net from 'net';
 import * as _ from 'lodash';
+import * as socks5 from '@heroku/socksv5';
 
 import { config } from './config';
+import { STORE } from './store';
 
-function isAuthorized(proxyAuth: string): boolean {
+const socksServer: net.Server = socks5.createServer(function (info, accept, deny) {
+  if (!_.find(STORE.loggedInIps, (ip) => ip.includes(info.srcAddr))) {
+    deny();
+
+    return;
+  }
+
+  accept();
+});
+
+socksServer.listen(1080, 'localhost', function () {
+  console.log('SOCKS server listening on port 1080');
+});
+
+(socksServer as any).useAuth(socks5.auth.None());
+
+function isAuthorized(proxyAuth: string, ipAddress: string): boolean {
   if (!proxyAuth) {
     return false;
   }
@@ -24,6 +42,12 @@ function isAuthorized(proxyAuth: string): boolean {
     return false;
   }
 
+  if (!STORE.loggedInIps.includes(ipAddress)) {
+    console.log('added_ip_socks_list');
+
+    STORE.loggedInIps.push(ipAddress);
+  }
+
   return true;
 }
 
@@ -38,7 +62,7 @@ function onConnect(req: http.IncomingMessage, socket: net.Socket, head: Buffer) 
 
   const port = parseInt(urlPort) || 443;
 
-  if (!isAuthorized(req.headers['proxy-authorization'])) {
+  if (!isAuthorized(req.headers['proxy-authorization'], socket.remoteAddress)) {
     socket.write(
       `${['HTTP/1.1 407 Proxy Authentication Required', 'Proxy-Authenticate: Basic'].join('\n')}\n\n`,
       () => {
@@ -83,7 +107,7 @@ function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerRespon
     headers: clientReq.headers,
   };
 
-  if (!isAuthorized(clientReq.headers['proxy-authorization'])) {
+  if (!isAuthorized(clientReq.headers['proxy-authorization'], clientReq.socket.remoteAddress)) {
     clientRes.writeHead(407, { 'Proxy-Authenticate': 'Basic' });
 
     clientRes.end();
