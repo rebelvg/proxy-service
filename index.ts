@@ -19,10 +19,6 @@ const socksServer: net.Server = socks5.createServer((info, accept, deny) => {
   accept();
 });
 
-socksServer.listen(config.socksPort, 'localhost', () => {
-  console.log('socks_server_running');
-});
-
 (socksServer as any).useAuth(socks5.auth.None());
 
 function verifyUser(proxyAuth: string, ipAddress: string): boolean {
@@ -186,4 +182,10 @@ if (config.httpsPort) {
   httpsServer.listen(config.httpsPort);
 
   console.log('https_proxy_running');
+}
+
+if (config.socksPort) {
+  socksServer.listen(config.socksPort, 'localhost', () => {
+    console.log('socks_server_running');
+  });
 }
