@@ -14,7 +14,9 @@ function sleep(seconds: number) {
 
 (async () => {
   try {
-    const storeFile = JSON.parse(fs.readFileSync('./store-data.json', { encoding: 'utf-8' }));
+    const storeFile = JSON.parse(
+      fs.readFileSync('./store-data.json', { encoding: 'utf-8' }),
+    );
 
     STORE = {
       ...STORE,

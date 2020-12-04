@@ -51,7 +51,11 @@ function verifyUser(proxyAuth: string, ipAddress: string): boolean {
   return true;
 }
 
-function onConnect(req: http.IncomingMessage, socket: net.Socket, head: Buffer) {
+function onConnect(
+  req: http.IncomingMessage,
+  socket: net.Socket,
+  head: Buffer,
+) {
   socket.on('error', (err) => {
     console.error('socket', err.message, req.url);
 
@@ -62,14 +66,20 @@ function onConnect(req: http.IncomingMessage, socket: net.Socket, head: Buffer) 
 
   const port = parseInt(urlPort) || 443;
 
-  const isAuthorized = verifyUser(req.headers['proxy-authorization'], socket.remoteAddress);
+  const isAuthorized = verifyUser(
+    req.headers['proxy-authorization'],
+    socket.remoteAddress,
+  );
 
   if (!isAuthorized) {
     socket.write(
-      `${['HTTP/1.1 407 Proxy Authentication Required', 'Proxy-Authenticate: Basic'].join('\n')}\n\n`,
+      `${[
+        'HTTP/1.1 407 Proxy Authentication Required',
+        'Proxy-Authenticate: Basic',
+      ].join('\n')}\n\n`,
       () => {
         socket.end();
-      }
+      },
     );
 
     return;
@@ -90,7 +100,10 @@ function onConnect(req: http.IncomingMessage, socket: net.Socket, head: Buffer) 
   });
 }
 
-function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerResponse) {
+function onRequest(
+  clientReq: http.IncomingMessage,
+  clientRes: http.ServerResponse,
+) {
   let url;
 
   try {
@@ -111,7 +124,10 @@ function onRequest(clientReq: http.IncomingMessage, clientRes: http.ServerRespon
     headers: clientReq.headers,
   };
 
-  const isAuthorized = verifyUser(clientReq.headers['proxy-authorization'], clientReq.socket.remoteAddress);
+  const isAuthorized = verifyUser(
+    clientReq.headers['proxy-authorization'],
+    clientReq.socket.remoteAddress,
+  );
 
   if (!isAuthorized) {
     clientRes.writeHead(407, { 'Proxy-Authenticate': 'Basic' });
@@ -168,7 +184,7 @@ if (config.httpsPort) {
       key: fs.readFileSync(config.key),
       cert: fs.readFileSync(config.cert),
     },
-    onRequest
+    onRequest,
   );
 
   httpsServer.on('connect', onConnect);
