@@ -6,7 +6,7 @@ import * as net from 'net';
 import * as _ from 'lodash';
 import * as socks5 from '@heroku/socksv5';
 
-import { config } from './config';
+import { config } from '../config';
 import { STORE } from './store';
 
 const socksServer: net.Server = socks5.createServer((info, accept, deny) => {

@@ -1,5 +1,6 @@
 .vscode/
 .idea/
 node_modules/
+dist/
 config.ts
 store-data.json

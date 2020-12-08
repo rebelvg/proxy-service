@@ -27,6 +27,6 @@ function sleep(seconds: number) {
   while (true) {
     fs.writeFileSync('./store-data.json', JSON.stringify(STORE));
 
-    await sleep(1);
+    await sleep(100);
   }
 })();
