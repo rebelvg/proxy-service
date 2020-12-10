@@ -10,9 +10,9 @@ import { config } from '../config';
 import { STORE } from './store';
 
 const socksServer: net.Server = socks5.createServer((info, accept, deny) => {
-  accept();
-
   console.log(info);
+
+  accept();
 
   return;
 
@@ -63,7 +63,7 @@ function onConnect(
   head: Buffer,
 ) {
   socket.on('error', (err) => {
-    console.error('socket', err.message, req.url);
+    console.log('socket', err.message, req.url);
 
     socket.end();
   });
@@ -100,7 +100,7 @@ function onConnect(
   });
 
   netConnect.on('error', (err) => {
-    console.error('netConnect', err.message, req.url, urlHost);
+    console.log('netConnect', err.message, req.url, urlHost);
 
     socket.end();
   });
@@ -152,7 +152,7 @@ function onRequest(
   });
 
   proxy.on('error', (err) => {
-    console.error('proxy', err.message, clientReq.url, url.hostname);
+    console.log('proxy', err.message, clientReq.url, url.hostname);
 
     clientRes.write(err.message, 'utf8');
 
@@ -174,7 +174,7 @@ if (config.httpPort) {
   httpServer.on('connect', onConnect);
 
   httpServer.on('error', (err) => {
-    console.error(err);
+    console.log('http_server_error', err);
 
     throw err;
   });
@@ -196,7 +196,7 @@ if (config.httpsPort) {
   httpsServer.on('connect', onConnect);
 
   httpsServer.on('error', (err) => {
-    console.error(err);
+    console.log('http_server_error', err);
 
     throw err;
   });
