@@ -8,8 +8,8 @@ export let STORE: IStore = {
   loggedInIps: [],
 };
 
-function sleep(seconds: number) {
-  return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 (async () => {
@@ -27,6 +27,6 @@ function sleep(seconds: number) {
   while (true) {
     fs.writeFileSync('./store-data.json', JSON.stringify(STORE));
 
-    await sleep(100);
+    await sleep(1000);
   }
 })();
