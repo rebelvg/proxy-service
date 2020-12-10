@@ -10,12 +10,6 @@ import { config } from '../config';
 import { STORE } from './store';
 
 const socksServer: net.Server = socks5.createServer((info, accept, deny) => {
-  console.log(info);
-
-  accept();
-
-  return;
-
   if (!_.find(STORE.loggedInIps, (ip) => ip.includes(info.srcAddr))) {
     deny();
 
