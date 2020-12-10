@@ -207,7 +207,7 @@ if (config.httpsPort) {
 }
 
 if (config.socksPort) {
-  socksServer.listen(config.socksPort, 'localhost', () => {
+  socksServer.listen(config.socksPort, () => {
     console.log('socks_server_running');
   });
 }
