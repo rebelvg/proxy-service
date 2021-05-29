@@ -64,7 +64,7 @@ function onConnect(
 
   const [urlHost, urlPort] = req.url.split(':');
 
-  const port = parseInt(urlPort) || 443;
+  const port = parseInt(urlPort);
 
   const isAuthorized = verifyUser(
     req.headers['proxy-authorization'],
@@ -104,24 +104,17 @@ function onRequest(
   clientReq: http.IncomingMessage,
   clientRes: http.ServerResponse,
 ) {
-  let url;
-
-  try {
-    url = new URL(clientReq.url);
-  } catch (err) {
-    clientRes.write(err.message, 'utf8');
-
-    clientRes.end();
-
-    return;
-  }
+  const url = new URL(clientReq.url);
 
   const options = {
     hostname: url.hostname,
-    port: url.port || 80,
+    port: url.port,
     path: ''.concat(url.pathname, url.search, url.hash),
     method: clientReq.method,
-    headers: clientReq.headers,
+    headers: {
+      ...clientReq.headers,
+      host: url.host,
+    },
   };
 
   const isAuthorized = verifyUser(
@@ -137,13 +130,35 @@ function onRequest(
     return;
   }
 
-  const proxy = http.request(options, (res) => {
-    clientRes.writeHead(res.statusCode, res.headers);
+  let proxy: http.ClientRequest;
 
-    res.pipe(clientRes, {
-      end: true,
-    });
-  });
+  switch (url.protocol) {
+    case 'http:': {
+      proxy = http.request(options, (res) => {
+        clientRes.writeHead(res.statusCode, res.headers);
+
+        res.pipe(clientRes, {
+          end: true,
+        });
+      });
+
+      break;
+    }
+    case 'https:': {
+      proxy = https.request(options, (res) => {
+        clientRes.writeHead(res.statusCode, res.headers);
+
+        res.pipe(clientRes, {
+          end: true,
+        });
+      });
+
+      break;
+    }
+    default: {
+      throw new Error('unknown_protocol');
+    }
+  }
 
   proxy.on('error', (err) => {
     console.log('proxy', err.message, clientReq.url, url.hostname);
