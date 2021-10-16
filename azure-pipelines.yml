@@ -32,6 +32,7 @@ jobs:
 
   - deployment: VMDeploy
     displayName: deploy
+    dependsOn: 'build'
     pool:
       vmImage: 'ubuntu-latest'
     environment:
@@ -39,6 +40,13 @@ jobs:
       resourceType: VirtualMachine
     strategy:
       runOnce:
+        preDeploy:
+          steps:
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                buildType: 'current'
+                targetPath: '$(Pipeline.Workspace)'
         deploy:
           steps:
             - script: echo my first deployment
+            - script: ls
