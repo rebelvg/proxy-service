@@ -156,7 +156,9 @@ function onRequest(
       break;
     }
     default: {
-      throw new Error('unknown_protocol');
+      clientRes.end();
+
+      break;
     }
   }
 
@@ -183,9 +185,7 @@ if (config.httpPort) {
   httpServer.on('connect', onConnect);
 
   httpServer.on('error', (err) => {
-    console.log('http_server_error', err);
-
-    throw err;
+    console.error('http_server_error', err);
   });
 
   httpServer.listen(config.httpPort);
@@ -205,9 +205,7 @@ if (config.httpsPort) {
   httpsServer.on('connect', onConnect);
 
   httpsServer.on('error', (err) => {
-    console.log('http_server_error', err);
-
-    throw err;
+    console.error('http_server_error', err);
   });
 
   httpsServer.listen(config.httpsPort);
