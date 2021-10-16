@@ -49,4 +49,5 @@ jobs:
         deploy:
           steps:
             - script: echo my first deployment
-            - script: ls
+            - script: 'pwd'
+            - script: 'ls $(Pipeline.Workspace)'
