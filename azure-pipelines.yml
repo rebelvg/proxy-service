@@ -31,3 +31,17 @@ steps:
     inputs:
       targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       publishLocation: 'pipeline'
+
+jobs:
+  - deployment: VMDeploy
+    displayName: web
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment:
+      name: ovh2
+      resourceType: VirtualMachine
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - script: echo my first deployment
