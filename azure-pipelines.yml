@@ -30,24 +30,30 @@ jobs:
           targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
           publishLocation: 'pipeline'
 
-  - deployment: VMDeploy
-    displayName: deploy
-    dependsOn: 'build'
-    pool:
-      vmImage: 'ubuntu-latest'
-    environment:
-      name: ovh2
-      resourceType: VirtualMachine
-    strategy:
-      runOnce:
-        preDeploy:
-          steps:
-            - task: DownloadPipelineArtifact@2
-              inputs:
-                buildType: 'current'
-                targetPath: '$(Pipeline.Workspace)'
-        deploy:
-          steps:
-            - script: echo my first deployment
-            - script: 'pwd'
-            - script: 'ls $(Pipeline.Workspace)'
+  # - deployment: VMDeploy
+  #   displayName: deploy
+  #   dependsOn: 'build'
+  #   pool:
+  #     vmImage: 'ubuntu-latest'
+  #   environment:
+  #     name: ovh2
+  #     resourceType: VirtualMachine
+  #   strategy:
+  #     runOnce:
+  #       preDeploy:
+  #         steps:
+  #           - task: DownloadPipelineArtifact@2
+  #             inputs:
+  #               buildType: 'current'
+  #               targetPath: '$(Pipeline.Workspace)'
+  #       deploy:
+  #         steps:
+  #           - script: echo my first deployment
+  #           - script: 'pwd'
+  #           - script: 'ls $(Pipeline.Workspace)'
+  #           - task: ExtractFiles@1
+  #             inputs:
+  #               archiveFilePatterns: '$(Pipeline.Workspace)/build/$(Build.BuildId).zip'
+  #               destinationFolder: '$(Pipeline.Workspace)/release'
+  #               cleanDestinationFolder: true
+  #               overwriteExistingFiles: false
