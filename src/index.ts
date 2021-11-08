@@ -104,7 +104,15 @@ function onRequest(
   clientReq: http.IncomingMessage,
   clientRes: http.ServerResponse,
 ) {
-  const url = new URL(clientReq.url);
+  let url: URL;
+
+  try {
+    url = new URL(clientReq.url);
+  } catch (error) {
+    clientRes.end();
+
+    return;
+  }
 
   const options = {
     hostname: url.hostname,
