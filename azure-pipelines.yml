@@ -20,7 +20,7 @@ jobs:
         displayName: 'install and build'
       - task: ArchiveFiles@2
         inputs:
-          rootFolderOrFile: '$(Agent.BuildDirectory)'
+          rootFolderOrFile: '$(Build.SourcesDirectory)'
           includeRootFolder: true
           archiveType: 'zip'
           archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
