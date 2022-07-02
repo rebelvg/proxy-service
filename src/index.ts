@@ -202,8 +202,10 @@ function onRequest(
   });
 }
 
-process.on('unhandledRejection', (reason, p) => {
-  throw reason;
+process.on('unhandledRejection', (error, p) => {
+  console.error(error);
+
+  throw 1;
 });
 
 if (config.httpPort) {
