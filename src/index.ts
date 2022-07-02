@@ -107,7 +107,7 @@ function onConnect(
   });
 
   netConnect.on('error', (err) => {
-    console.error('net_connect_error', login, err.message, req.url, urlHost);
+    console.error('net_connect_error', login, err.message, req.url);
 
     socket.end();
   });
@@ -184,13 +184,7 @@ function onRequest(
   }
 
   proxy.on('error', (err) => {
-    console.error(
-      'proxy_error',
-      login,
-      err.message,
-      clientReq.url,
-      url.hostname,
-    );
+    console.error('proxy_error', login, err.message, clientReq.url);
 
     clientRes.write(err.message, 'utf8');
 
