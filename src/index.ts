@@ -52,7 +52,14 @@ function verifyUser(proxyAuth: string, ipAddress: string): string {
 
   const foundUser = _.find(STORE.users, { login });
 
-  foundUser?.ips?.push(ipAddress);
+  if (!foundUser) {
+    STORE.users.push({
+      ips: [ipAddress],
+      login,
+    });
+  } else {
+    foundUser.ips.push(ipAddress);
+  }
 
   return login;
 }
@@ -62,8 +69,13 @@ function onConnect(
   socket: net.Socket,
   head: Buffer,
 ) {
+  const login = verifyUser(
+    req.headers['proxy-authorization'],
+    socket.remoteAddress,
+  );
+
   socket.on('error', (err) => {
-    console.error('socket_error', socket.remoteAddress, err.message, req.url);
+    console.error('socket_error', login, err.message, req.url);
 
     socket.end();
   });
@@ -72,12 +84,7 @@ function onConnect(
 
   const port = parseInt(urlPort);
 
-  const isAuthorized = verifyUser(
-    req.headers['proxy-authorization'],
-    socket.remoteAddress,
-  );
-
-  if (!isAuthorized) {
+  if (!login) {
     socket.write(
       `${[
         'HTTP/1.1 407 Proxy Authentication Required',
@@ -100,13 +107,7 @@ function onConnect(
   });
 
   netConnect.on('error', (err) => {
-    console.error(
-      'net_connect_error',
-      socket.remoteAddress,
-      err.message,
-      req.url,
-      urlHost,
-    );
+    console.error('net_connect_error', login, err.message, req.url, urlHost);
 
     socket.end();
   });
@@ -137,12 +138,12 @@ function onRequest(
     },
   };
 
-  const isAuthorized = verifyUser(
+  const login = verifyUser(
     clientReq.headers['proxy-authorization'],
     clientReq.socket.remoteAddress,
   );
 
-  if (!isAuthorized) {
+  if (!login) {
     clientRes.writeHead(407, { 'Proxy-Authenticate': 'Basic' });
 
     clientRes.end();
@@ -185,7 +186,7 @@ function onRequest(
   proxy.on('error', (err) => {
     console.error(
       'proxy_error',
-      clientReq.socket.remoteAddress,
+      login,
       err.message,
       clientReq.url,
       url.hostname,
