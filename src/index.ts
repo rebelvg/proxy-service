@@ -10,7 +10,11 @@ import { config } from './config';
 import { STORE } from './store';
 
 const socksServer: net.Server = socks5.createServer((info, accept, deny) => {
-  if (!_.find(STORE.loggedInIps, (ip) => ip.includes(info.srcAddr))) {
+  if (
+    !_.find(STORE.users, (storeRecord) =>
+      storeRecord.ips.includes(info.srcAddr),
+    )
+  ) {
     deny();
 
     return;
@@ -21,13 +25,17 @@ const socksServer: net.Server = socks5.createServer((info, accept, deny) => {
 
 (socksServer as any).useAuth(socks5.auth.None());
 
-function verifyUser(proxyAuth: string, ipAddress: string): boolean {
-  if (_.find(STORE.loggedInIps, (ip) => ip.includes(ipAddress))) {
-    return true;
+function verifyUser(proxyAuth: string, ipAddress: string): string {
+  const foundStoreRecord = _.find(STORE.users, (storeRecord) =>
+    storeRecord.ips.includes(ipAddress),
+  );
+
+  if (foundStoreRecord) {
+    return foundStoreRecord.login;
   }
 
   if (!proxyAuth) {
-    return false;
+    return null;
   }
 
   const baseToBuffer = Buffer.from(proxyAuth.slice(6), 'base64');
@@ -39,16 +47,14 @@ function verifyUser(proxyAuth: string, ipAddress: string): boolean {
   const user = _.find(config.users, { login, password });
 
   if (!user) {
-    return false;
+    return null;
   }
 
-  if (!STORE.loggedInIps.includes(ipAddress)) {
-    console.log('added_ip_socks_list', ipAddress);
+  const foundUser = _.find(STORE.users, { login });
 
-    STORE.loggedInIps.push(ipAddress);
-  }
+  foundUser?.ips?.push(ipAddress);
 
-  return true;
+  return login;
 }
 
 function onConnect(
@@ -57,7 +63,7 @@ function onConnect(
   head: Buffer,
 ) {
   socket.on('error', (err) => {
-    console.log('socket', err.message, req.url);
+    console.error('socket_error', socket.remoteAddress, err.message, req.url);
 
     socket.end();
   });
@@ -94,7 +100,13 @@ function onConnect(
   });
 
   netConnect.on('error', (err) => {
-    console.log('netConnect', err.message, req.url, urlHost);
+    console.error(
+      'net_connect_error',
+      socket.remoteAddress,
+      err.message,
+      req.url,
+      urlHost,
+    );
 
     socket.end();
   });
@@ -171,7 +183,13 @@ function onRequest(
   }
 
   proxy.on('error', (err) => {
-    console.log('proxy', err.message, clientReq.url, url.hostname);
+    console.error(
+      'proxy_error',
+      clientReq.socket.remoteAddress,
+      err.message,
+      clientReq.url,
+      url.hostname,
+    );
 
     clientRes.write(err.message, 'utf8');
 

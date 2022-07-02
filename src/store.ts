@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 
 interface IStore {
-  loggedInIps: string[];
+  users: { ips: string[]; login: string }[];
 }
 
 export let STORE: IStore = {
-  loggedInIps: [],
+  users: [],
 };
 
 function sleep(ms: number) {
@@ -25,7 +25,7 @@ function sleep(ms: number) {
   } catch (error) {}
 
   while (true) {
-    fs.writeFileSync('./store-data.json', JSON.stringify(STORE));
+    fs.writeFileSync('./store-data.json', JSON.stringify(STORE, null, 2));
 
     await sleep(1000);
   }
