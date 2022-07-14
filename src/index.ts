@@ -219,8 +219,8 @@ if (config.httpPort) {
 if (config.httpsPort) {
   const httpsServer = https.createServer(
     {
-      key: config.key.split(',').map((path) => fs.readFileSync(path)),
-      cert: config.cert.split(',').map((path) => fs.readFileSync(path)),
+      key: config.key,
+      cert: config.cert,
     },
     onRequest,
   );
